@@ -26,4 +26,5 @@ export class Reservation {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
+  apprentice_id: any;
 }

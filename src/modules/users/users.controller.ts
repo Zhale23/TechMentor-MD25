@@ -6,6 +6,10 @@ import {
   Param,
   Put,
   Delete,
+  UseGuards,
+  ForbiddenException,
+  Request,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDTO } from '../../dto/create-user.dto';
@@ -17,9 +21,14 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UserResponseDTO } from '../../dto/user-response.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Users')
-@ApiBearerAuth() // endpoints designed to be protected (JWT)
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -53,8 +62,8 @@ export class UsersController {
     description: 'Usuario encontrado',
     type: UserResponseDTO,
   })
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(Number(id));
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findOne(id);
   }
 
   @Put(':id')
@@ -64,14 +73,21 @@ export class UsersController {
     description: 'Usuario actualizado',
     type: UserResponseDTO,
   })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDTO) {
-    return this.usersService.update(Number(id), updateUserDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDTO,
+  ) {
+    return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Eliminar un usuario por id (administración)' })
   @ApiResponse({ status: 200, description: 'Usuario eliminado' })
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(Number(id));
+  remove(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    const user = req.user;
+    if (user && user.id === id) {
+      throw new ForbiddenException('No puedes eliminar tu propio usuario');
+    }
+    return this.usersService.remove(id);
   }
 }

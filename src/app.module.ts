@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RolesGuard } from './common/guards/roles.guard';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -26,14 +27,14 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
       synchronize: true, //pasar a false en producción
       logging: false,
     }),
-  UsersModule,
-  AuthModule,
-  MentorshipsModule,
-  ReservationsModule,
-  // ReservationsModule will handle DB-backed reservations
-  // created below
+    UsersModule,
+    AuthModule,
+    MentorshipsModule,
+    ReservationsModule,
+    // ReservationsModule will handle DB-backed reservations
+    // created below
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RolesGuard],
 })
 export class AppModule {}
