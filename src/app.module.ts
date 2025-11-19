@@ -23,8 +23,12 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Reservation],
-      synchronize: true, //pasar a false en producción
+      entities: [
+        User,
+        Reservation,
+        require('./entities/mentorship.entity').Mentorship,
+      ],
+      synchronize: false, //pasar a false en producción
       logging: false,
     }),
     UsersModule,

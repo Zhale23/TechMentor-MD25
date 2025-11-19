@@ -36,43 +36,47 @@ export class ReservationsController {
   ) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'mentora', 'aprendiz')
   @ApiOperation({ summary: 'Listar reservas (persistentes en DB)' })
   @ApiResponse({
     status: 200,
     description: 'Lista de reservas',
     type: [ReservationResponseDto],
   })
-  findAll(@Request() req) {
+  async findAll(@Request() req) {
     const user = req.user;
-    // If no auth provided, deny access to list (require JWT)
     if (!user) throw new ForbiddenException('No autenticado');
+
     // admin sees all
     if (user.role === 'admin') return this.service.findAll();
+
+    const allReservations = await this.service.findAll();
+
     // aprendiz: only their own
     if (user.role === 'aprendiz') {
-      return this.service
-        .findAll()
-        .then((list) =>
-          list.filter((r) => r.apprentice && r.apprentice.id === user.id),
-        );
+      return allReservations.filter(
+        (r) => r.apprentice && r.apprentice.id === user.id,
+      );
     }
+
     // mentora: see reservations for their mentorships
     if (user.role === 'mentora') {
-      const myMentorships = this.mentorshipsService
-        .findAll()
+      const mentorships = await this.mentorshipsService.findAll();
+      const myMentorshipIds = mentorships
         .filter((m) => m.mentor_id === user.id)
         .map((m) => m.id);
-      return this.service
-        .findAll()
-        .then((list) =>
-          list.filter((r) => myMentorships.includes(r.mentorship_id)),
-        );
+      return allReservations.filter((r) =>
+        myMentorshipIds.includes(r.mentorship_id),
+      );
     }
-    // default: deny
+
     throw new ForbiddenException('No tienes permiso para ver estas reservas');
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'mentora', 'aprendiz')
   @ApiOperation({ summary: 'Obtener reserva por id' })
   @ApiResponse({
     status: 200,
@@ -90,7 +94,7 @@ export class ReservationsController {
       return r;
     }
     if (user.role === 'mentora') {
-      const m = this.mentorshipsService.findOne(r.mentorship_id);
+      const m = await this.mentorshipsService.findOne(r.mentorship_id);
       if (m.mentor_id !== user.id)
         throw new ForbiddenException('No puedes ver esta reserva');
       return r;

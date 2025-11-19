@@ -1,100 +1,49 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateMentorshipDto } from '../../dto/create-mentorship.dto';
+import { Mentorship } from '../../entities/mentorship.entity';
 
 @Injectable()
 export class MentorshipsService {
-  // In-memory mentorships (5 examples)
-  private data: Array<any> = [
-    {
-      id: 10,
-      title: 'Node.js Básico',
-      description: 'Introducción a Node.js para principiantes',
-      mentor_id: 2,
-      slots: 5,
-      price: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: 11,
-      title: 'Testing con Jest',
-      description: 'Aprende a testear aplicaciones Node con Jest',
-      mentor_id: 2,
-      slots: 3,
-      price: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: 12,
-      title: 'Bases de datos con TypeORM',
-      description: 'Modela y consulta bases de datos con TypeORM',
-      mentor_id: 4,
-      slots: 6,
-      price: 10,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: 13,
-      title: 'Arquitectura de APIs REST',
-      description: 'Buenas prácticas para construir APIs REST con Node/Nest',
-      mentor_id: 5,
-      slots: 4,
-      price: 5,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: 14,
-      title: 'Desarrollo Frontend para backend',
-      description: 'Conecta tus APIs con un frontend simple',
-      mentor_id: 6,
-      slots: 8,
-      price: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ];
+  constructor(
+    @InjectRepository(Mentorship)
+    private readonly repo: Repository<Mentorship>,
+  ) {}
 
-  private nextId = this.data.reduce((max, m) => Math.max(max, m.id), 0) + 1;
-
-  findAll() {
-    return this.data;
+  async findAll(): Promise<Mentorship[]> {
+    return this.repo.find();
   }
 
-  findOne(id: number) {
-    const m = this.data.find((x) => x.id === id);
+  async findOne(id: number): Promise<Mentorship> {
+    const m = await this.repo.findOne({ where: { id } });
     if (!m) throw new NotFoundException(`Mentorship ${id} not found`);
     return m;
   }
 
-  create(dto: CreateMentorshipDto) {
-    const now = new Date().toISOString();
-    const record = {
-      id: this.nextId++,
+  async create(dto: CreateMentorshipDto): Promise<Mentorship> {
+    const record = this.repo.create({
       title: dto.title,
-      description: dto.description ?? null,
+      description: dto.description ?? undefined,
       mentor_id: dto.mentor_id,
       slots: dto.slots ?? 1,
       price: dto.price ?? 0,
-      created_at: now,
-      updated_at: now,
-    };
-    this.data.push(record);
-    return record;
+    });
+    return await this.repo.save(record);
   }
 
-  update(id: number, dto: Partial<CreateMentorshipDto>) {
-    const m = this.findOne(id);
-    Object.assign(m, dto, { updated_at: new Date().toISOString() });
-    return m;
+  async update(
+    id: number,
+    dto: Partial<CreateMentorshipDto>,
+  ): Promise<Mentorship> {
+    const m = await this.findOne(id);
+    Object.assign(m, dto);
+    return this.repo.save(m);
   }
 
-  remove(id: number) {
-    const idx = this.data.findIndex((x) => x.id === id);
-    if (idx === -1) throw new NotFoundException(`Mentorship ${id} not found`);
-    this.data.splice(idx, 1);
+  async remove(id: number) {
+    const m = await this.findOne(id);
+    await this.repo.remove(m);
     return { deleted: true };
   }
 }

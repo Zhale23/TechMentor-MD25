@@ -70,11 +70,12 @@ export class MentorshipsController {
     if (user.role !== 'admin' && user.role !== 'mentora') {
       throw new ForbiddenException('No tienes permiso para crear mentorías');
     }
-    if (user.role === 'mentora' && user.id !== dto.mentor_id) {
-      throw new ForbiddenException(
-        'No puedes crear mentorías para otra mentora',
-      );
+    // If the logged user is a mentor, force the mentor_id to the logged user's id
+    if (user.role === 'mentora') {
+      dto.mentor_id = user.id;
     }
+
+    // Admins may provide any mentor_id; mentors will always create on their own behalf
     return this.service.create(dto);
   }
 
@@ -89,14 +90,14 @@ export class MentorshipsController {
     description: 'Mentoría actualizada',
     type: MentorshipResponseDto,
   })
-  update(
+  async update(
     @Request() req,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: Partial<CreateMentorshipDto>,
   ) {
     const user = req.user;
     if (!user) throw new ForbiddenException('No autenticado');
-    const m = this.service.findOne(id);
+    const m = await this.service.findOne(id);
     if (user.role !== 'admin' && user.role !== 'mentora') {
       throw new ForbiddenException(
         'No tienes permiso para actualizar mentorías',
@@ -117,14 +118,16 @@ export class MentorshipsController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiOperation({ summary: 'Eliminar una mentoría (in-memory)' })
   @ApiResponse({ status: 200, description: 'Mentoría eliminada' })
-  remove(@Request() req, @Param('id', ParseIntPipe) id: number) {
+  async remove(@Request() req, @Param('id', ParseIntPipe) id: number) {
     const user = req.user;
     if (!user) throw new ForbiddenException('No autenticado');
     const m = this.service.findOne(id);
     if (user.role !== 'admin' && user.role !== 'mentora') {
       throw new ForbiddenException('No tienes permiso para eliminar mentorías');
     }
-    if (user.role === 'mentora' && user.id !== m.mentor_id) {
+    // if service.findOne is async it returns a Promise; ensure we await it
+    const resolved = await m;
+    if (user.role === 'mentora' && user.id !== resolved.mentor_id) {
       throw new ForbiddenException(
         'No puedes eliminar mentorías de otra mentora',
       );

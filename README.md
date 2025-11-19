@@ -1,5 +1,9 @@
 # TechMentor API
 
+![coverage](https://img.shields.io/badge/coverage-55.82%25-brightgreen)
+
+**Cobertura actual (resumen)**: Statements: **56.77%**, Branches: **50.41%**, Functions: **53.22%**, Lines: **55.82%** — generado con `npm run test:cov`.
+
 **Descripción**:
 
 - **TechMentor** es una API RESTful construida con NestJS y TypeORM pensada para gestionar una plataforma de mentorías: usuarios (administradores, mentoras y aprendices), mentorías (ofertas), y reservaciones. Está preparada para ejecución en desarrollo, pruebas y despliegue en entornos gestionados (por ejemplo Aiven, RDS, Cloud SQL).
@@ -162,11 +166,47 @@ curl http://localhost:3000/api/mentorships
 curl -X POST http://localhost:3000/api/mentorships -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"title":"Mentoría","description":"...","slots":2}'
 ```
 
-**Pruebas**:
+**Pruebas y Cobertura (Coverage)**:
 
-- Unit tests: Jest (`npm test`). Se incluyen `*.spec.ts` para servicios, controladores y guards.
-- Tests E2E: `npm run test:e2e` (cuando estén disponibles/activados en el proyecto).
-- Cobertura: ejecutar `npm run test:cov` mostrará los porcentajes actuales de cobertura. (No se fijan porcentajes artificiales en este README — ejecuta el comando para obtener los números reales de tu entorno.)
+- **Unit tests**: Jest. Ejecutar:
+
+  ```powershell
+  npm run test
+  ```
+
+  Se incluyen `*.spec.ts` para servicios, controladores y guards.
+
+- **E2E tests**: Ejecutar (si están configurados):
+
+  ```powershell
+  npm run test:e2e
+  ```
+
+- **Cobertura**: generar el reporte de cobertura con Jest ejecutando:
+
+  ```powershell
+  npm run test -- --coverage
+  # o si tienes el script test:cov
+  npm run test:cov
+  ```
+
+  - Resultado en consola: Jest muestra un resumen con los porcentajes de cobertura por `statements`, `branches`, `functions` y `lines`.
+  - Reporte HTML: abre `coverage/lcov-report/index.html` en tu navegador para ver el desglose por archivo.
+  - JSON resumen: `coverage/coverage-summary.json` contiene los porcentajes en formato consumible por scripts o badges.
+
+- **Obtener solo el porcentaje de líneas (ejemplo)**:
+
+  ```powershell
+  node -e "console.log(require('./coverage/coverage-summary.json').total.lines.pct + '%')"
+  ```
+
+- **Badge de cobertura (opcional)**: puedes crear un badge dinámico con servicios como Shields.io una vez tengas el porcentaje, por ejemplo:
+
+  ```text
+  https://img.shields.io/badge/coverage-<PCT>%25-brightgreen
+  ```
+
+- Nota: en este README no se fija un porcentaje objetivo. Ejecuta la cobertura localmente para obtener los números reales y, si quieres, puedo insertar el badge con el porcentaje actual.
 
 **Buenas prácticas y recomendaciones de despliegue**:
 
@@ -188,14 +228,8 @@ curl -X POST http://localhost:3000/api/mentorships -H "Authorization: Bearer $TO
 
 **Contacto**:
 
-- Documento mantenido por el equipo TechMentor. Para dudas rapidás, crea un issue en el repo o contacta al mantenedor responsable.
+- Documento mantenido por el equipo TechMentor. Para dudas rapidas, crea un issue en el repo o contacta al mantenedor responsable.
 
----
-
-Este README resume la operativa esencial para desarrollar, probar y desplegar la API TechMentor. Si quieres, puedo:
-
-- Añadir badges de CI/coverage.
-- Generar un archivo `deploy.sh` o `docker-compose.yml` de ejemplo para producción.
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
