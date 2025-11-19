@@ -1,3 +1,201 @@
+# TechMentor API
+
+**Descripción**:
+
+- **TechMentor** es una API RESTful construida con NestJS y TypeORM pensada para gestionar una plataforma de mentorías: usuarios (administradores, mentoras y aprendices), mentorías (ofertas), y reservaciones. Está preparada para ejecución en desarrollo, pruebas y despliegue en entornos gestionados (por ejemplo Aiven, RDS, Cloud SQL).
+
+**Características principales**:
+
+- Autenticación con JWT y contraseñas hasheadas (bcrypt).
+- Control de accesos por roles (admin / mentora / aprendiz).
+- Persistencia con TypeORM (MySQL) y migraciones gestionadas con la CLI de TypeORM.
+- Documentación OpenAPI (Swagger).
+- Tests unitarios con Jest y estructura de pruebas basada en mocks para repositorios/services.
+
+**Roles**:
+
+- **admin**: gestión completa de usuarios, mentorías y reservas.
+- **mentora**: puede crear/editar/gestionar sus propias mentorías, ver reservas asociadas a sus mentorías y actualizar estados de reservas.
+- **aprendiz**: puede buscar mentorías y crear sus propias reservas.
+
+**Estructura del proyecto (módulos principales)**:
+
+- `src/modules/users` — Registro, CRUD de usuarios.
+- `src/modules/auth` — Login, registro, estrategia JWT.
+- `src/modules/mentorships` — CRUD de mentorías.
+- `src/modules/reservations` — Crear/gestionar reservas.
+- `src/entities` — Entidades TypeORM (`User`, `Mentorship`, `Reservation`).
+- `src/migrations` — Migraciones TypeORM (versionadas).
+- `src/common/guards`, `src/common/decorators` — Guards y decoradores (RolesGuard, Roles decorator).
+
+**Requisitos locales**:
+
+- Node.js >= 18
+- npm
+- MySQL client si vas a ejecutar comandos SQL locales
+- (Opcional) `ts-node` y `tsconfig-paths` para ejecutar migraciones en modo TypeScript
+
+**Variables de entorno** (archivo `.env` en la raíz de `tech-mentor`):
+
+- `DB_HOST` — host de la base de datos (ej: `tech-mentor-db-...aivencloud.com`).
+- `DB_PORT` — puerto (ej: `3306`).
+- `DB_USERNAME` — usuario DB.
+- `DB_PASSWORD` — contraseña DB.
+- `DB_NAME` — nombre de la base de datos.
+- `DB_SSL` — `true` si la conexión requiere TLS (Aiven suele requerirlo).
+- `DB_SSL_CA_PATH` o `DB_SSL_CA_BASE64` — ruta al certificado CA o el contenido en base64 (opcional/para SSL).
+- `JWT_SECRET_KEY` — secret para firmar tokens JWT.
+- `NODE_ENV` — `development` | `production` (afecta rutas de migraciones).
+
+Ejemplo mínimo `.env`:
+
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=root
+DB_NAME=techmentor
+JWT_SECRET_KEY=changeme
+NODE_ENV=development
+```
+
+**Instalación y ejecución local**:
+
+1. Instalar dependencias:
+
+```powershell
+cd tech-mentor
+npm install
+```
+
+2. Ejecutar en desarrollo:
+
+```powershell
+npm run start:dev
+```
+
+3. Compilar para producción:
+
+```powershell
+npm run build
+npm run start:prod
+```
+
+**Migraciones (TypeORM)**:
+
+- Generar migración (TypeScript):
+
+```powershell
+npm run migration:generate -- MyMigrationName
+```
+
+- Ejecutar migraciones (TypeScript / dev):
+
+```powershell
+npm run migration:run:ts
+```
+
+- Ejecutar migraciones (build -> prod):
+
+```powershell
+npm run build
+npm run migration:run
+```
+
+- Revertir última migración:
+
+```powershell
+npm run migration:revert:ts
+# o en prod
+npm run migration:revert
+```
+
+**Swagger (documentación)**:
+
+- La documentación Swagger se expone en `http://localhost:3000/api/docs` cuando la app está en ejecución.
+
+**Endpoints de ejemplo** (usar `Authorization: Bearer <token>` para rutas protegidas):
+
+- Autenticación:
+  - `POST /api/auth/register` — Registrar usuario (body: `name, email, password, role`).
+  - `POST /api/auth/login` — Login (body: `email, password`) → devuelve `{ accessToken }`.
+  - `GET /api/auth/profile` — Perfil del usuario (JWT required).
+
+- Users (admin):
+  - `GET /api/users` — listar usuarios.
+  - `POST /api/users` — crear usuario (admin).
+  - `GET /api/users/:id` — obtener usuario.
+  - `PUT /api/users/:id` — actualizar usuario.
+  - `DELETE /api/users/:id` — eliminar usuario.
+
+- Mentorships:
+  - `GET /api/mentorships` — listar mentorías (público).
+  - `GET /api/mentorships/:id` — ver mentoría.
+  - `POST /api/mentorships` — crear (roles: `mentora`, `admin`). Si el creador es `mentora`, se fuerza `mentor_id` al id del usuario autenticado.
+  - `PATCH /api/mentorships/:id` — actualizar (roles: `mentora`, `admin`).
+  - `DELETE /api/mentorships/:id` — eliminar (roles: `mentora`, `admin`).
+
+- Reservations:
+  - `GET /api/reservations` — listar reservas (roles: `admin`, `mentora`, `aprendiz`). Filtrado por rol: admin ve todo, aprendiz solo propias, mentora solo reservas de sus mentorías.
+  - `GET /api/reservations/:id` — ver reserva (mismo filtrado de acceso).
+  - `POST /api/reservations` — crear reserva (roles: `aprendiz`, `admin`). Aprendiz solo puede crear para sí mismo.
+  - `PATCH /api/reservations/:id/status` — actualizar estado (roles: `mentora`, `admin`).
+  - `DELETE /api/reservations/:id` — eliminar (admin o propietario aprendiz).
+
+**Ejemplos `curl`**:
+
+- Login:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"email":"user@example.com","password":"secret"}'
+```
+
+- Listar mentorías públicas:
+
+```bash
+curl http://localhost:3000/api/mentorships
+```
+
+- Crear mentoría (mentora):
+
+```bash
+curl -X POST http://localhost:3000/api/mentorships -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"title":"Mentoría","description":"...","slots":2}'
+```
+
+**Pruebas**:
+
+- Unit tests: Jest (`npm test`). Se incluyen `*.spec.ts` para servicios, controladores y guards.
+- Tests E2E: `npm run test:e2e` (cuando estén disponibles/activados en el proyecto).
+- Cobertura: ejecutar `npm run test:cov` mostrará los porcentajes actuales de cobertura. (No se fijan porcentajes artificiales en este README — ejecuta el comando para obtener los números reales de tu entorno.)
+
+**Buenas prácticas y recomendaciones de despliegue**:
+
+- No usar `synchronize: true` en producción — usar migraciones.
+- Guardar secretos (DB credentials, JWT secret) en un secret manager o variables de entorno del entorno de despliegue.
+- Ejecutar migraciones antes de arrancar la aplicación en producción.
+- Habilitar TLS/SSL para la conexión a la base de datos (Aiven lo solicita). Usa `DB_SSL_CA_PATH` o `DB_SSL_CA_BASE64` para proveer el CA al `DataSource`.
+
+**Notas de interacción y flujo**:
+
+- Flujo típico de reserva:
+  1. Un `aprendiz` busca una `mentoría` en `GET /api/mentorships`.
+  2. Crea una reserva `POST /api/reservations` con `mentorship_id` y `date`.
+  3. El `mentora` puede ver la reserva y cambiar su `status` (confirmada/cancelada) via `PATCH /api/reservations/:id/status`.
+
+**Contribuciones**:
+
+- Si quieres contribuir: abre un issue o PR con cambios pequeños y pruebas que cubran la nueva funcionalidad.
+
+**Contacto**:
+
+- Documento mantenido por el equipo TechMentor. Para dudas rapidás, crea un issue en el repo o contacta al mantenedor responsable.
+
+---
+
+Este README resume la operativa esencial para desarrollar, probar y desplegar la API TechMentor. Si quieres, puedo:
+
+- Añadir badges de CI/coverage.
+- Generar un archivo `deploy.sh` o `docker-compose.yml` de ejemplo para producción.
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
