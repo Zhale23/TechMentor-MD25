@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,16 +14,16 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, configDoc);
 
-  const customOptions = {
+  const customOptions: SwaggerCustomOptions = {
     swaggerOptions: {
-      url: '/api-json',
+      url: '/api-json'
     },
-    customCssUrl:[
-      'https://unpkg.com/swagger-ui-dist5.10.3/swagger-ui.css',
+    customCssUrl: [
+      'https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css',
     ],
-    customJs:[
-      'https://unpkg.com/swagger-ui-dist5.10.3/swagger-ui-bundle.js',
-      'https://unpkg.com/swagger-ui-dist5.10.3/swagger-ui-standalone-preset.js',
+    customJs: [
+      'https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-bundle.js',
+      'https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-standalone-preset.js',
     ]
   }
 
