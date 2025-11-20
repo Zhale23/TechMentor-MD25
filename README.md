@@ -1,9 +1,9 @@
 # TechMentor API
 
-![coverage](https://img.shields.io/badge/coverage-55.82%25-brightgreen)
+![coverage](https://img.shields.io/badge/coverage-82.01%25-brightgreen)
 
-**Cobertura actual (resumen)**: Statements: **56.77%**, Branches: **50.41%**, Functions: **53.22%**, Lines: **55.82%** — generado con `npm run test:cov`.
-
+**Cobertura actual**: 
+![Resumen de cobertura](./docs/image.png)
 **Descripción**:
 
 - **TechMentor** es una API RESTful construida con NestJS y TypeORM pensada para gestionar una plataforma de mentorías: usuarios (administradores, mentoras y aprendices), mentorías (ofertas), y reservaciones. Está preparada para ejecución en desarrollo, pruebas y despliegue en entornos gestionados (por ejemplo Aiven, RDS, Cloud SQL).
